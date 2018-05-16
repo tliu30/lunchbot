@@ -2,9 +2,9 @@
 from datetime import date
 import json
 import logging
+import os
 import random
-
-from sparkpost import SparkPost
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,9 @@ def select_option(options):
 def create_message(todays_choice):
     '''Draft a message'''
     return (
-        '<p>Hi friends!</p>'
-        '<p>Today we will be having {todays_choice}; hope you enjoy it!</p>'
-        '<p>Peace out,<br>Lunch bot</p>'
+        'Hi friends! '
+        'Today we will be having {todays_choice}; hope you enjoy it!'
+        '\nPeace out,\n\tLunch bot'
     ).format(todays_choice=todays_choice)
 
 
@@ -37,20 +37,13 @@ def create_subject(todays_choice):
 
 if __name__ == '__main__':
     import settings
-    sp = SparkPost(settings.SPARKPOST_API_KEY)
+    webhook_url = settings.SLACK_WEBHOOK_URL
 
     options = get_options(DEFAULT_OPTIONS_PATH)
     todays_choice = select_option(options)
     message = create_message(todays_choice)
-    subject = create_subject(todays_choice)
 
-    response = sp.transmissions.send(
-        use_sandbox=True,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipients=settings.DEFAULT_RECIPIENTS,
-        subject=subject,
-        html=message
-    )
+    response =  requests.post(webhook_url, data=json.dumps({'text': message}), headers={'Content-Type': 'application/json'})
 
-    logger.info(response)
+    logger.info(response.status_code)
 
